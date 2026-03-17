@@ -1,7 +1,10 @@
 // =============================================================================
 // BMS Session KPI Dashboard - Doctor Workload Table Component (T064)
+// Professional showcase redesign with progress bars, rank badges, totals
 // =============================================================================
 
+import { useMemo } from 'react'
+import { Stethoscope } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -22,6 +25,19 @@ interface DoctorTableProps {
 }
 
 export function DoctorTable({ data, isLoading, className }: DoctorTableProps) {
+  const maxPatientCount = useMemo(
+    () =>
+      data && data.length > 0
+        ? Math.max(...data.map((d) => d.patientCount))
+        : 0,
+    [data],
+  )
+
+  const totalPatients = useMemo(
+    () => (data ? data.reduce((sum, d) => sum + d.patientCount, 0) : 0),
+    [data],
+  )
+
   // ---------------------------------------------------------------------------
   // Loading skeleton
   // ---------------------------------------------------------------------------
@@ -30,18 +46,31 @@ export function DoctorTable({ data, isLoading, className }: DoctorTableProps) {
       <div className={cn(className)}>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">#</TableHead>
-              <TableHead>Doctor Name</TableHead>
-              <TableHead className="text-right">Patient Count</TableHead>
+            <TableRow className="bg-muted/30">
+              <TableHead className="w-12 uppercase text-xs tracking-wider text-muted-foreground">
+                #
+              </TableHead>
+              <TableHead className="uppercase text-xs tracking-wider text-muted-foreground">
+                Doctor Name
+              </TableHead>
+              <TableHead className="text-right uppercase text-xs tracking-wider text-muted-foreground">
+                Patient Count
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-6" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+              <TableRow key={i} className={i % 2 === 0 ? 'bg-muted/50' : ''}>
+                <TableCell>
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-40" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="ml-auto h-4 w-16" />
+                  <Skeleton className="mt-1.5 h-1.5 w-full rounded-full" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -57,6 +86,7 @@ export function DoctorTable({ data, isLoading, className }: DoctorTableProps) {
     return (
       <div className={cn(className)}>
         <EmptyState
+          icon={<Stethoscope className="h-8 w-8" />}
           title="No doctor data found for this period"
           description="Try selecting a different date range or department."
         />
@@ -71,22 +101,68 @@ export function DoctorTable({ data, isLoading, className }: DoctorTableProps) {
     <div className={cn(className)}>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">#</TableHead>
-            <TableHead>Doctor Name</TableHead>
-            <TableHead className="text-right">Patient Count</TableHead>
+          <TableRow className="bg-muted/30">
+            <TableHead className="w-12 uppercase text-xs tracking-wider text-muted-foreground">
+              #
+            </TableHead>
+            <TableHead className="uppercase text-xs tracking-wider text-muted-foreground">
+              Doctor Name
+            </TableHead>
+            <TableHead className="text-right uppercase text-xs tracking-wider text-muted-foreground">
+              Patient Count
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((doctor, index) => (
-            <TableRow key={doctor.doctorCode}>
-              <TableCell className="font-medium">{index + 1}</TableCell>
-              <TableCell>{doctor.doctorName || doctor.doctorCode}</TableCell>
-              <TableCell className="text-right">
-                {doctor.patientCount.toLocaleString()}
-              </TableCell>
-            </TableRow>
-          ))}
+          {data.map((doctor, index) => {
+            const percentage =
+              maxPatientCount > 0
+                ? Math.round((doctor.patientCount / maxPatientCount) * 100)
+                : 0
+
+            return (
+              <TableRow
+                key={doctor.doctorCode}
+                className={`hover:bg-muted transition-colors ${
+                  index % 2 === 0 ? 'bg-muted/50' : ''
+                }`}
+              >
+                {/* Rank badge */}
+                <TableCell>
+                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center">
+                    {index + 1}
+                  </div>
+                </TableCell>
+
+                {/* Doctor name */}
+                <TableCell className="font-medium">
+                  {doctor.doctorName || doctor.doctorCode}
+                </TableCell>
+
+                {/* Patient count + progress bar */}
+                <TableCell className="text-right">
+                  <span className="font-semibold">
+                    {doctor.patientCount.toLocaleString()}
+                  </span>
+                  <div className="relative mt-1.5 h-1.5 w-full rounded-full bg-muted">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-primary/60 transition-all duration-300"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            )
+          })}
+
+          {/* Total row */}
+          <TableRow className="border-t-2">
+            <TableCell />
+            <TableCell className="font-bold">Total</TableCell>
+            <TableCell className="text-right font-bold">
+              {totalPatients.toLocaleString()}
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     </div>

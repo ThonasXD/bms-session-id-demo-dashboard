@@ -1,8 +1,10 @@
 // =============================================================================
 // BMS Session KPI Dashboard - Department Workload Table Component (T045)
+// Professional showcase redesign with progress bars, rank badges, totals
 // =============================================================================
 
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
+import { Building2 } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -36,6 +38,22 @@ export function DepartmentTable() {
     enabled: connectionConfig !== null && session !== null,
   })
 
+  const maxVisitCount = useMemo(
+    () =>
+      departments && departments.length > 0
+        ? Math.max(...departments.map((d) => d.visitCount))
+        : 0,
+    [departments],
+  )
+
+  const totalVisits = useMemo(
+    () =>
+      departments
+        ? departments.reduce((sum, d) => sum + d.visitCount, 0)
+        : 0,
+    [departments],
+  )
+
   // ---------------------------------------------------------------------------
   // Loading skeleton
   // ---------------------------------------------------------------------------
@@ -43,18 +61,31 @@ export function DepartmentTable() {
     return (
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">#</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead className="text-right">Visits</TableHead>
+          <TableRow className="bg-muted/30">
+            <TableHead className="w-12 uppercase text-xs tracking-wider text-muted-foreground">
+              #
+            </TableHead>
+            <TableHead className="uppercase text-xs tracking-wider text-muted-foreground">
+              Department
+            </TableHead>
+            <TableHead className="text-right uppercase text-xs tracking-wider text-muted-foreground">
+              Visits
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.from({ length: 5 }).map((_, i) => (
-            <TableRow key={i}>
-              <TableCell><Skeleton className="h-4 w-6" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-10" /></TableCell>
+            <TableRow key={i} className={i % 2 === 0 ? 'bg-muted/50' : ''}>
+              <TableCell>
+                <Skeleton className="h-6 w-6 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-40" />
+              </TableCell>
+              <TableCell className="text-right">
+                <Skeleton className="ml-auto h-4 w-16" />
+                <Skeleton className="mt-1.5 h-1.5 w-full rounded-full" />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -68,6 +99,7 @@ export function DepartmentTable() {
   if (isError) {
     return (
       <EmptyState
+        icon={<Building2 className="h-8 w-8" />}
         title="Failed to load department data"
         description={error?.message ?? 'An unexpected error occurred.'}
         action={
@@ -88,6 +120,7 @@ export function DepartmentTable() {
   if (!departments || departments.length === 0) {
     return (
       <EmptyState
+        icon={<Building2 className="h-8 w-8" />}
         title="No department visits found for today"
         description="Data will appear when patients visit."
       />
@@ -100,22 +133,68 @@ export function DepartmentTable() {
   return (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead className="w-12">#</TableHead>
-          <TableHead>Department</TableHead>
-          <TableHead className="text-right">Visits</TableHead>
+        <TableRow className="bg-muted/30">
+          <TableHead className="w-12 uppercase text-xs tracking-wider text-muted-foreground">
+            #
+          </TableHead>
+          <TableHead className="uppercase text-xs tracking-wider text-muted-foreground">
+            Department
+          </TableHead>
+          <TableHead className="text-right uppercase text-xs tracking-wider text-muted-foreground">
+            Visits
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {departments.map((dept, index) => (
-          <TableRow key={dept.departmentCode}>
-            <TableCell className="font-medium">{index + 1}</TableCell>
-            <TableCell>{dept.departmentName}</TableCell>
-            <TableCell className="text-right">
-              {dept.visitCount.toLocaleString()}
-            </TableCell>
-          </TableRow>
-        ))}
+        {departments.map((dept, index) => {
+          const percentage =
+            maxVisitCount > 0
+              ? Math.round((dept.visitCount / maxVisitCount) * 100)
+              : 0
+
+          return (
+            <TableRow
+              key={dept.departmentCode}
+              className={`hover:bg-muted transition-colors ${
+                index % 2 === 0 ? 'bg-muted/50' : ''
+              }`}
+            >
+              {/* Rank badge */}
+              <TableCell>
+                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center">
+                  {index + 1}
+                </div>
+              </TableCell>
+
+              {/* Department name */}
+              <TableCell className="font-medium">
+                {dept.departmentName}
+              </TableCell>
+
+              {/* Visit count + progress bar */}
+              <TableCell className="text-right">
+                <span className="font-semibold">
+                  {dept.visitCount.toLocaleString()}
+                </span>
+                <div className="relative mt-1.5 h-1.5 w-full rounded-full bg-muted">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-primary/60 transition-all duration-300"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </TableCell>
+            </TableRow>
+          )
+        })}
+
+        {/* Total row */}
+        <TableRow className="border-t-2">
+          <TableCell />
+          <TableCell className="font-bold">Total</TableCell>
+          <TableCell className="text-right font-bold">
+            {totalVisits.toLocaleString()}
+          </TableCell>
+        </TableRow>
       </TableBody>
     </Table>
   )

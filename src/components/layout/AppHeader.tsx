@@ -1,12 +1,19 @@
 // =============================================================================
 // BMS Session KPI Dashboard - App Header (T046)
-// Navigation header with tabs, user info, and connection status.
+// Professional navigation header with icons, user info, and connection status.
 // =============================================================================
 
 import { Link, useLocation } from 'react-router-dom';
 import { useBmsSessionContext } from '@/contexts/BmsSessionContext';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import {
+  Activity,
+  Building2,
+  LayoutDashboard,
+  LogOut,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Navigation tab definitions
@@ -15,13 +22,14 @@ import { Button } from '@/components/ui/button';
 interface NavTab {
   label: string;
   path: string;
+  icon: LucideIcon;
 }
 
 const NAV_TABS: NavTab[] = [
-  { label: 'Overview', path: '/' },
-  { label: 'Trends', path: '/trends' },
-  { label: 'Departments', path: '/departments' },
-  { label: 'Demographics', path: '/demographics' },
+  { label: 'Overview', path: '/', icon: LayoutDashboard },
+  { label: 'Trends', path: '/trends', icon: TrendingUp },
+  { label: 'Departments', path: '/departments', icon: Building2 },
+  { label: 'Demographics', path: '/demographics', icon: Users },
 ];
 
 // ---------------------------------------------------------------------------
@@ -35,14 +43,31 @@ export function AppHeader() {
   const databaseLabel =
     session?.databaseType === 'postgresql' ? 'PostgreSQL' : 'MySQL';
 
+  // Extract user initials (first letter of name)
+  const userInitial = session?.userInfo.name?.charAt(0).toUpperCase() ?? '?';
+
   return (
-    <header className="flex h-14 items-center justify-between border-b px-6">
-      {/* Left: Title */}
-      <div className="flex items-center gap-2">
-        <h1 className="text-lg font-semibold tracking-tight">BMS Dashboard</h1>
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 px-6 shadow-lg">
+      {/* ----------------------------------------------------------------- */}
+      {/* Left: Hospital icon + title                                       */}
+      {/* ----------------------------------------------------------------- */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
+          <Activity className="h-5 w-5 text-blue-400" />
+        </div>
+        <div className="flex flex-col">
+          <h1 className="text-base font-bold leading-tight tracking-tight text-white">
+            BMS Dashboard
+          </h1>
+          <span className="text-[11px] leading-tight text-white/50">
+            Session Demo
+          </span>
+        </div>
       </div>
 
-      {/* Center: Navigation tabs */}
+      {/* ----------------------------------------------------------------- */}
+      {/* Center: Navigation tabs with icons                                */}
+      {/* ----------------------------------------------------------------- */}
       <nav className="flex items-center gap-1">
         {NAV_TABS.map((tab) => {
           const isActive =
@@ -50,35 +75,81 @@ export function AppHeader() {
               ? location.pathname === '/'
               : location.pathname.startsWith(tab.path);
 
+          const Icon = tab.icon;
+
           return (
             <Link
               key={tab.path}
               to={tab.path}
               className={
-                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors ' +
+                'relative flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ' +
                 (isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground')
+                  ? 'text-white'
+                  : 'text-white/60 hover:text-white/90')
               }
             >
+              <Icon className="h-4 w-4" />
               {tab.label}
+              {/* Active indicator bar */}
+              {isActive && (
+                <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-blue-400" />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Right: User info, database badge, disconnect */}
-      <div className="flex items-center gap-3">
+      {/* ----------------------------------------------------------------- */}
+      {/* Right: Connection status, DB badge, user avatar, disconnect       */}
+      {/* ----------------------------------------------------------------- */}
+      <div className="flex items-center gap-4">
         {session && (
           <>
-            <div className="text-right text-sm leading-tight">
-              <p className="font-medium">{session.userInfo.name}</p>
-              <p className="text-muted-foreground">{session.userInfo.department}</p>
+            {/* Connection status */}
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+              </span>
+              <span className="text-xs font-medium text-white/80">
+                Connected
+              </span>
             </div>
-            <Badge variant="secondary">{databaseLabel}</Badge>
-            <Button variant="outline" size="sm" onClick={disconnectSession}>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-white/15" />
+
+            {/* Database badge */}
+            <span className="inline-flex items-center rounded-md border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/90 backdrop-blur">
+              {databaseLabel}
+            </span>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-white/15" />
+
+            {/* User avatar + info */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-semibold text-white">
+                {userInitial}
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-sm font-medium leading-tight text-white">
+                  {session.userInfo.name}
+                </span>
+                <span className="text-[11px] leading-tight text-white/50">
+                  {session.userInfo.department}
+                </span>
+              </div>
+            </div>
+
+            {/* Disconnect button */}
+            <button
+              onClick={disconnectSession}
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-white/60 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
               Disconnect
-            </Button>
+            </button>
           </>
         )}
       </div>
